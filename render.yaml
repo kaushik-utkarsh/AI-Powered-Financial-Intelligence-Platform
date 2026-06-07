@@ -1,0 +1,92 @@
+# Render Blueprint — AI-Powered Financial Intelligence Platform
+# Deploy: Render Dashboard → New → Blueprint → connect this repo
+#
+# Creates two web services:
+#   1. aura-fi-mcp      — Fi.Money MCP mock server (financial demo data)
+#   2. aura-platform    — Main AURA app (UI, AI agents, API)
+#
+# After deploy, set secret env vars in the Render dashboard when prompted.
+
+services:
+  # ── Fi.Money MCP mock server ──────────────────────────────────────────────
+  - type: web
+    name: aura-fi-mcp
+    runtime: node
+    rootDir: fi-mcp-dev
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+
+  # ── Main AURA platform ────────────────────────────────────────────────────
+  - type: web
+    name: aura-platform
+    runtime: node
+    rootDir: aura-platform
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+      - key: SILENT_FALLBACK
+        value: "true"
+      - key: LOG_LEVEL
+        value: info
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "900000"
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: "100"
+
+      # Internal MCP connection (Render private network)
+      - key: FI_MCP_HOSTPORT
+        fromService:
+          type: web
+          name: aura-fi-mcp
+          property: hostport
+
+      # Azure OpenAI (primary)
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false
+      - key: AZURE_OPENAI_API_KEY
+        sync: false
+      - key: AZURE_OPENAI_CHATGPT_DEPLOYMENT
+        value: gpt-4.1
+      - key: AZURE_OPENAI_CHATGPT_MODEL
+        value: gpt-4.1
+      - key: AZURE_OPENAI_API_VERSION
+        value: 2025-01-01-preview
+
+      # OpenAI / Gemini (fallback)
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o
+      - key: GEMINI_API_KEY
+        sync: false
+
+      # Database (use MongoDB Atlas connection string)
+      - key: MONGODB_URI
+        sync: false
+
+      # Optional: LangSmith observability
+      - key: LANGCHAIN_TRACING_V2
+        value: "false"
+      - key: LANGCHAIN_API_KEY
+        sync: false
+      - key: LANGCHAIN_PROJECT
+        value: aura-finance
+
+      # Optional: market data APIs
+      - key: TRUEDATA_API_KEY
+        sync: false
+      - key: POLYGON_API_KEY
+        sync: false

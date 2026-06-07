@@ -22,8 +22,10 @@ const SILENT_FALLBACK = process.env.SILENT_FALLBACK !== 'false';
 export class FiMCPClient {
     constructor() {
         // Default to local fi-mcp-dev server for hackathon/development
-        // For production, set FI_MCP_URL=https://mcp.fi.money:8080
-        this.baseUrl = process.env.FI_MCP_URL || 'http://localhost:8080';
+        // For production, set FI_MCP_URL or FI_MCP_HOSTPORT (Render private network)
+        const hostPort = process.env.FI_MCP_HOSTPORT;
+        this.baseUrl = process.env.FI_MCP_URL
+            || (hostPort ? `http://${hostPort}` : 'http://localhost:8080');
         this.streamUrl = `${this.baseUrl}/mcp/stream`;
         this.sessionId = null;
         this.authenticated = false;
